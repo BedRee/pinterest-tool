@@ -1,0 +1,415 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pinterest CSV Automation - TrendyDesign.org</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            font-family: 'Segoe UI', sans-serif;
+            background: #f0f2f5;
+            min-height: 100vh;
+            padding: 30px 20px;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        h1 {
+            text-align: center;
+            color: #e60023;
+            font-size: 26px;
+            margin-bottom: 5px;
+        }
+
+        .subtitle {
+            text-align: center;
+            color: #888;
+            font-size: 13px;
+            margin-bottom: 25px;
+        }
+
+        .card {
+            background: white;
+            border-radius: 12px;
+            padding: 25px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.07);
+        }
+
+        .card h2 {
+            font-size: 16px;
+            color: #333;
+            margin-bottom: 15px;
+            padding-bottom: 8px;
+            border-bottom: 2px solid #f0f2f5;
+        }
+
+        label {
+            display: block;
+            font-size: 13px;
+            color: #555;
+            margin-bottom: 4px;
+            font-weight: 600;
+        }
+
+        input, textarea, select {
+            width: 100%;
+            padding: 10px 12px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            font-size: 14px;
+            color: #333;
+            margin-bottom: 12px;
+            transition: border 0.2s;
+        }
+
+        input:focus, textarea:focus {
+            outline: none;
+            border-color: #e60023;
+        }
+
+        textarea {
+            height: 160px;
+            resize: vertical;
+        }
+
+        .row {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 12px;
+        }
+
+        .btn {
+            width: 100%;
+            padding: 14px;
+            border: none;
+            border-radius: 10px;
+            font-size: 15px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: opacity 0.2s, transform 0.1s;
+        }
+
+        .btn:hover { opacity: 0.9; transform: translateY(-1px); }
+        .btn:active { transform: translateY(0); }
+
+        .btn-primary {
+            background: #e60023;
+            color: white;
+        }
+
+        .btn-disabled {
+            background: #ccc;
+            color: white;
+            cursor: not-allowed;
+        }
+
+        .log-box {
+            background: #1e1e1e;
+            color: #00ff00;
+            font-family: monospace;
+            font-size: 13px;
+            padding: 15px;
+            border-radius: 8px;
+            height: 150px;
+            overflow-y: auto;
+            white-space: pre-wrap;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 8px;
+            background: #f0f2f5;
+            border-radius: 10px;
+            overflow: hidden;
+            margin-top: 10px;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: #e60023;
+            width: 0%;
+            transition: width 0.3s;
+            border-radius: 10px;
+        }
+
+        .status {
+            text-align: center;
+            font-size: 13px;
+            color: #888;
+            margin-top: 8px;
+        }
+
+        .download-btn {
+            display: none;
+            margin-top: 15px;
+            background: #4CAF50;
+            color: white;
+        }
+
+        .pin-preview {
+            display: none;
+            margin-top: 15px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 12px;
+        }
+
+        th {
+            background: #f0f2f5;
+            padding: 8px;
+            text-align: left;
+            color: #555;
+        }
+
+        td {
+            padding: 8px;
+            border-bottom: 1px solid #f0f2f5;
+            color: #333;
+            max-width: 150px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        tr:hover td { background: #fafafa; }
+    </style>
+</head>
+<body>
+<!-- Password Screen -->
+<div id="passwordScreen" style="display:flex; justify-content:center; align-items:center; min-height:100vh;">
+    <div style="background:white; padding:40px; border-radius:16px; box-shadow:0 4px 20px rgba(0,0,0,0.1); text-align:center; width:340px;">
+        <div style="font-size:40px; margin-bottom:10px;">📌</div>
+        <h2 style="color:#e60023; margin-bottom:5px;">Pinterest Automation</h2>
+        <p style="color:#888; font-size:13px; margin-bottom:20px;">TrendyDesign.org</p>
+        <input type="password" id="passwordInput" placeholder="Enter password" style="width:100%; padding:12px; border:1px solid #ddd; border-radius:8px; font-size:14px; margin-bottom:10px;"/>
+        <p id="passwordError" style="display:none; color:#e60023; font-size:12px; margin-bottom:10px;">Wrong password. Try again!</p>
+        <button onclick="checkPassword()" style="width:100%; padding:12px; background:#e60023; color:white; border:none; border-radius:8px; font-size:15px; font-weight:bold; cursor:pointer;">Login</button>
+    </div>
+</div>
+
+<!-- Main App -->
+<div id="mainApp" style="display:none;">
+<div class="container">
+
+    <h1>📌 Pinterest CSV Automation</h1>
+    <p class="subtitle">TrendyDesign.org - Powered by Claude + GPT Image 2</p>
+
+    <!-- Settings -->
+    <div class="card">
+        <h2>⚙️ Settings</h2>
+        <label>Pinterest Board Name</label>
+        <input type="text" id="board_name" placeholder="e.g. Patio Design Ideas" />
+
+        <div class="row">
+            <div>
+                <label>Start Hour (0-23)</label>
+                <input type="number" id="start_hour" value="1" min="0" max="23" />
+            </div>
+            <div>
+                <label>Start Minute (0-59)</label>
+                <input type="number" id="start_minute" value="0" min="0" max="59" />
+            </div>
+            <div>
+                <label>Interval (minutes)</label>
+                <input type="number" id="interval" value="30" min="1" />
+            </div>
+        </div>
+    </div>
+
+    <!-- URLs -->
+    <div class="card">
+        <h2>🔗 Paste Your URLs</h2>
+        <label>One URL per line (up to 10)</label>
+        <textarea id="urls" placeholder="https://trendydesign.org/your-article-1/&#10;https://trendydesign.org/your-article-2/&#10;..."></textarea>
+        <button class="btn btn-primary" id="generateBtn" onclick="startGeneration()">
+            🚀 Generate & Download CSV
+        </button>
+    </div>
+
+    <!-- Progress -->
+    <div class="card">
+        <h2>📊 Progress</h2>
+        <div class="log-box" id="log">Waiting to start...\n</div>
+        <div class="progress-bar">
+            <div class="progress-fill" id="progressFill"></div>
+        </div>
+        <p class="status" id="statusText">Ready</p>
+
+        <button class="btn download-btn" id="downloadBtn" onclick="downloadCSV()">
+            📥 Download CSV
+        </button>
+
+        <!-- Preview Table -->
+        <div class="pin-preview" id="pinPreview">
+            <h2 style="margin-top:15px; font-size:14px; color:#333;">Pin Preview</h2>
+            <div style="overflow-x:auto;">
+                <table id="previewTable">
+                    <thead>
+                        <tr>
+                            <th>Title</th>
+                            <th>Description</th>
+                            <th>Image</th>
+                            <th>Link</th>
+                            <th>Board</th>
+                            <th>Publish Date</th>
+                        </tr>
+                    </thead>
+                    <tbody id="previewBody"></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<script>
+    const API_URL = "https://c8n0f7god0.execute-api.eu-west-3.amazonaws.com/default/pinterest-automation";
+    const PASSWORD = "BenderBad 159";
+    let csvData = "";
+
+    function checkPassword() {
+        const input = document.getElementById("passwordInput").value;
+        if (input === PASSWORD) {
+            document.getElementById("passwordScreen").style.display = "none";
+            document.getElementById("mainApp").style.display = "block";
+        } else {
+            document.getElementById("passwordError").style.display = "block";
+        }
+    }
+
+    document.addEventListener("keypress", function(e) {
+        if (e.key === "Enter" && document.getElementById("passwordScreen").style.display !== "none") {
+            checkPassword();
+        }
+    });
+
+    function log(msg) {
+        const box = document.getElementById("log");
+        box.textContent += msg + "\n";
+        box.scrollTop = box.scrollHeight;
+    }
+
+    function setProgress(percent, status) {
+        document.getElementById("progressFill").style.width = percent + "%";
+        document.getElementById("statusText").textContent = status;
+    }
+
+    async function startGeneration() {
+        const urlsRaw = document.getElementById("urls").value.trim();
+        const urls = urlsRaw.split("\n").map(u => u.trim()).filter(u => u);
+        const board = document.getElementById("board_name").value.trim() || "XXX";
+        const startHour = parseInt(document.getElementById("start_hour").value);
+        const startMinute = parseInt(document.getElementById("start_minute").value);
+        const interval = parseInt(document.getElementById("interval").value);
+
+        if (!urls.length) {
+            alert("Please paste at least one URL!");
+            return;
+        }
+
+        if (urls.length > 10) {
+            alert("Maximum 10 URLs at a time!");
+            return;
+        }
+
+        // Reset UI
+        document.getElementById("log").textContent = "";
+        document.getElementById("downloadBtn").style.display = "none";
+        document.getElementById("pinPreview").style.display = "none";
+        document.getElementById("previewBody").innerHTML = "";
+        document.getElementById("generateBtn").className = "btn btn-disabled";
+        document.getElementById("generateBtn").disabled = true;
+        csvData = "";
+
+        log(`Starting generation for ${urls.length} URLs...`);
+        log(`Board: ${board} | Start: ${startHour}:${String(startMinute).padStart(2,'0')} | Interval: ${interval} min`);
+        log("─────────────────────────────────────");
+        setProgress(10, "Sending request to server...");
+
+        try {
+            const response = await fetch(API_URL, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    urls: urls,
+                    board_name: board,
+                    start_hour: startHour,
+                    start_minute: startMinute,
+                    interval_minutes: interval
+                })
+            });
+
+            setProgress(90, "Processing response...");
+
+            if (!response.ok) {
+                const err = await response.text();
+                throw new Error(`Server error: ${err}`);
+            }
+
+            const contentType = response.headers.get("Content-Type") || "";
+
+            if (contentType.includes("text/csv")) {
+                csvData = await response.text();
+                log("CSV generated successfully!");
+                setProgress(100, "Done!");
+                parseAndPreview(csvData);
+                document.getElementById("downloadBtn").style.display = "block";
+                document.getElementById("pinPreview").style.display = "block";
+            } else {
+                const data = await response.json();
+                if (data.error) throw new Error(data.error);
+                log("Unexpected response format.");
+            }
+
+        } catch (err) {
+            log("ERROR: " + err.message);
+            setProgress(0, "Failed");
+        } finally {
+            document.getElementById("generateBtn").className = "btn btn-primary";
+            document.getElementById("generateBtn").disabled = false;
+        }
+    }
+
+    function parseAndPreview(csv) {
+        const lines = csv.trim().split("\n");
+        const tbody = document.getElementById("previewBody");
+        tbody.innerHTML = "";
+        for (let i = 1; i < lines.length; i++) {
+            const cols = lines[i].match(/(".*?"|[^,]+)(?=\s*,|\s*$)/g) || [];
+            const clean = cols.map(c => c.replace(/^"|"$/g, "").trim());
+            const tr = document.createElement("tr");
+            tr.innerHTML = `
+                <td title="${clean[0]}">${clean[0] || ""}</td>
+                <td title="${clean[1]}">${(clean[1] || "").substring(0, 40)}...</td>
+                <td>${clean[2] ? `<a href="${clean[2]}" target="_blank">View</a>` : "N/A"}</td>
+                <td title="${clean[3]}">${(clean[3] || "").substring(0, 30)}...</td>
+                <td>${clean[4] || ""}</td>
+                <td>${clean[5] || ""}</td>
+            `;
+            tbody.appendChild(tr);
+            log(`Pin ${i}: ${clean[0]}`);
+        }
+    }
+
+    function downloadCSV() {
+        if (!csvData) return;
+        const blob = new Blob([csvData], { type: "text/csv" });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = "pinterest_pins.csv";
+        a.click();
+        URL.revokeObjectURL(url);
+    }
+</script>
+</body>
+</html>
